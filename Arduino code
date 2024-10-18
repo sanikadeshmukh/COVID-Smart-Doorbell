@@ -1,0 +1,95 @@
+#include <LiquidCrystal.h>
+//Initialize the library with the numbers of the interface pins.
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+//red led
+int redLed = 9 ;
+//Ultrasonic Sensor
+const int pingPin = 7;
+//This is the Arduino Pin that will read the sensor output of A0
+int sensePin = A0;
+//The variable we will use to store the sensor input.
+int sensorInput;
+//The variable we will use to store temperature in degrees.
+double temp;
+//stores temp
+long duration;
+//stores duration in ms
+long cm;
+//stores cm converted
+void setup()
+{
+ //pin mode of red led
+  pinMode(9, OUTPUT);
+  //Initialize the LCD's number of columns and rows.
+  lcd.begin(16, 2);
+  //Start the Serial Port at 9600 baud (default).
+  Serial.begin(9600);
+}
+ void loop()
+{  
+  //Set the cursor to column 0, line 0
+  lcd.setCursor(0, 0)
+  // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(pingPin, OUTPUT);
+  digitalWrite(pingPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pingPin, LOW);
+// The same pin is used to read the signal from the PING))): a HIGH
+  // pulse whose duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(pingPin, INPUT);
+  duration = pulseIn(pingPin, HIGH);
+  // convert the time into a distance
+  cm = microsecondsToCentimeters(duration);
+  //Read the analog sensor and store it.
+  sensorInput = analogRead(A0);
+  float volt = sensorInput * 5;
+  //Multiply by 5V to get voltage.
+ //divide by 1024 as 5v has 1024 designatied
+  volt /= 1024;
+  Serial.print(volt);
+  Serial.println(" volts ");
+  //Subtract the offset.
+  temp = volt - 0.5;
+  //Convert to degrees.
+  temp = temp * 100;
+  //formula for Fahrenheit
+  temp = (9.0/5) *(temp) + 32; 
+  Serial.print("Temperature ");
+  Serial.print(temp);
+  Serial.println("F");
+  // printing on the lcd screen the word "temperature"
+  lcd.print("Temperature: ");
+  //Set the cursor to column 0, line 1
+  lcd.setCursor(0, 1);
+  // Printing the temperature on the lcd screen
+  lcd.print(temp);
+  // printing the name of the scale used for temperature
+  lcd.print("F");
+  // if the temperature (var associated: temp) is superior
+  // to 99, then we enter the if loop
+  if (temp >= 99.6 && cm < 50)
+  {
+    // turning on the red LED, stated as 'high'
+    digitalWrite(redLed, HIGH);  
+    //INPUT - FREQUENCY - TIME THAT LASTS
+    tone(8, 440, 200);
+  }
+  // otherwise, if the temperature is below 99
+  else if (temp < 99.6 && cm > 50)
+  {
+   // turning on the red LED, stated as 'low'
+    digitalWrite(redLed, LOW); 
+    noTone(8);
+  }  
+  delay(1000);
+}
+long microsecondsToCentimeters(long microseconds) {
+  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
+  // The ping travels out and back, so to find the distance of the
+  // object we take half of the distance travelled.
+  return microseconds / 29 / 2;
+}
